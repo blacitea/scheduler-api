@@ -1,36 +1,43 @@
 const PORT = process.env.PORT || 8001;
-const ENV = require("./environment");
+const ENV = require('./environment');
 
-const app = require("./application")(ENV, { updateAppointment });
-const server = require("http").Server(app);
+const app = require('./application')(ENV, { updateAppointment });
+const server = require('http').Server(app);
 
-const WebSocket = require("ws");
+const WebSocket = require('ws');
 const wss = new WebSocket.Server({ server });
 
-wss.on("connection", socket => {
-  socket.onmessage = event => {
-    console.log(`Message Received: ${event.data}`);
+const message = {
+	type: 'NOTFICATION',
+	content: 'The record was created.',
+	severity: 'LOW',
+	timestamp: 387250200000,
+};
 
-    if (event.data === "ping") {
-      socket.send(JSON.stringify("pong"));
-    }
-  };
+wss.on('connection', socket => {
+	socket.onmessage = event => {
+		console.log(`Message Received: ${event.data}`);
+
+		if (event.data === 'ping') {
+			socket.send(JSON.stringify(message));
+		}
+	};
 });
 
 function updateAppointment(id, interview) {
-  wss.clients.forEach(function eachClient(client) {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(
-        JSON.stringify({
-          type: "SET_INTERVIEW",
-          id,
-          interview
-        })
-      );
-    }
-  });
+	wss.clients.forEach(function eachClient(client) {
+		if (client.readyState === WebSocket.OPEN) {
+			client.send(
+				JSON.stringify({
+					type: 'SET_INTERVIEW',
+					id,
+					interview,
+				})
+			);
+		}
+	});
 }
 
 server.listen(PORT, () => {
-  console.log(`Listening on port ${PORT} in ${ENV} mode.`);
+	console.log(`Listening on port ${PORT} in ${ENV} mode.`);
 });
